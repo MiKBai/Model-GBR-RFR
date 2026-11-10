@@ -1,5 +1,4 @@
 # Model-GBR
-# Model-GBR-RFR
 %pip install pandas numpy scikit-learn openpyxl
 
 import pandas as pd
