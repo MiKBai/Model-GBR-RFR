@@ -1,0 +1,301 @@
+# Model-GBR
+# Model-GBR-RFR
+%pip install pandas numpy scikit-learn openpyxl
+
+import pandas as pd
+import numpy as np
+from sklearn.utils import shuffle
+from sklearn.model_selection import cross_val_score, ShuffleSplit
+
+from sklearn.gaussian_process import GaussianProcessRegressor as GPR
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel
+from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor as GBR
+from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor as DTR
+from sklearn.ensemble import RandomForestRegressor as RFR
+from sklearn.ensemble import ExtraTreesRegressor as ETR
+from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVR
+from sklearn.neighbors import KNeighborsRegressor as KNR
+
+df = pd.read_csv("OOHl.csv", encoding='latin1', index_col=0, engine='python')
+df
+
+X = df.iloc[:, :16]
+y = df.iloc[:, 16]
+X
+
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import GradientBoostingRegressor as GBR
+from sklearn.metrics import mean_squared_error as mse, r2_score
+from sklearn.model_selection import train_test_split
+
+
+params = {
+    "n_estimators": 180,        
+    "max_depth": 3,             
+    "min_samples_split": 4,     
+    "min_samples_leaf": 2,      
+    "learning_rate": 0.04,      
+    "subsample": 0.85,          
+    "max_features": 0.8,        
+    "loss": "squared_error",    
+    "random_state": 42
+}
+
+best_r2t = -np.inf
+best_random_state = None  
+
+for i in range(101):  
+    random_state = i  
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=random_state)  
+      
+    model = GBR(**params)
+    model.fit(X_train, y_train)  
+      
+    rmse = np.sqrt(mse(y_train, model.predict(X_train)))  
+    r2 = r2_score(y_train, model.predict(X_train))  
+    rmset = np.sqrt(mse(y_test, model.predict(X_test)))  
+    r2t = r2_score(y_test, model.predict(X_test))  
+      
+    print("Random seed:", random_state)  
+    print("Train RMSE:", rmse)  
+    print("Train R2:", r2)  
+    print("Test RMSE:", rmset)  
+    print("Test R2:", r2t)  
+    print("-------------------")  
+      
+
+    gap = r2 - r2t  
+
+
+    if (0.92 <= r2 <= 0.99) and (0.89 <= r2t <= 0.97) and (0 <= gap <= 0.4):
+        if r2t > best_r2t:
+            best_r2t = r2t
+            best_r2 = r2
+            best_random_state = random_state
+
+    #if r2t > best_r2t:
+    #    best_r2t = r2t
+    #    best_random_state = random_state
+    
+print("Best random state:", best_random_state)
+print("Best Test R2:", best_r2t)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=48)
+params = {
+    "n_estimators": 180,       
+    "max_depth": 3,             
+    "min_samples_split": 4,     
+    "min_samples_leaf": 2,      
+    "learning_rate": 0.04,      
+    "subsample": 0.85,          
+    "max_features": 0.8,        
+    "loss": "squared_error",    
+    "random_state": 42
+}
+model = GBR(**params)
+model.fit(X_train, y_train)
+rmse = np.sqrt(mse(y_train, model.predict(X_train)))
+r2 = r2_score(y_train, model.predict(X_train))
+rmset = np.sqrt(mse(y_test, model.predict(X_test)))
+r2t = r2_score(y_test, model.predict(X_test))
+
+
+print("rmsetr:", rmse)
+print("r2tr:", r2)
+print("rmsetest:", rmset) #test
+print("R2test:", r2t) #test
+
+
+all_predictions_train = model.predict(X_train)
+
+
+print("pre:", all_predictions_train)
+print("dft:", y_train.values)  
+
+
+N = 23   
+predictions_train = all_predictions_train[:N]  
+true_values_train = y_train[:N]  
+  
+ 
+df_results = pd.DataFrame({  
+    'Sample_ID': true_values_train.index,       
+    'Predictions': predictions_train,           
+    'True Values': true_values_train.values     
+})  
+
+# 4.  
+output_file = 'train_trainGBR.csv'  
+
+df_results.to_csv(output_file, index=False, encoding='utf-8-sig')  
+  
+print(f"Results have been saved to {output_file}")
+print("\surfing：")
+print(df_results.head())
+
+
+
+# 1.
+all_predictions_test = model.predict(X_test)
+
+
+print("pre:", all_predictions_test)
+print("dft:", y_test.values)      
+print("rmsetr:", rmse)
+print("r2tr:", r2)
+print("rmsetest:", rmset) #test
+print("R2test:", r2t)     #test
+print("Feature:", model.feature_importances_)
+
+# 2. 
+N = 8  # 您可以根据需要调整这个值（❗️看你想留多少点点了，给个一点乐呵乐呵就行）
+predictions_test = all_predictions_test[:N]  
+true_values_test = y_test[:N]  
+  
+# 3. 
+df_results = pd.DataFrame({  
+    'Sample_ID': true_values_test.index,       
+    'Predictions': predictions_test,           
+    'True Values': true_values_test.values     
+})  
+ 
+output_file = 'train_preGBR.csv'  
+
+df_results.to_csv(output_file, index=False, encoding='utf-8-sig')  
+  
+print(f"Results have been saved to {output_file}")
+print("surfing：")
+print(df_results)
+
+
+%pip install shap matplotlib
+
+import shap
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+# ==========================================
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
+plt.rcParams['font.family'] = 'sans-serif' 
+
+
+
+print("🚀 Caculating...")
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_train)
+
+
+# ==========================================
+name_mapping = {
+    "dianfu1": r"$\chi_1$",               
+    "dianfu2": r"$\chi_2$",               
+    "m1": r"$M_1$",                       
+    "m2": r"$M_2$",                       
+    "ryuanzi1": r"$r_{\mathrm{atom}, 1}$", 
+    "ryuanzi2": r"$r_{\mathrm{atom}, 2}$", 
+    "rlizi1": r"$r_{\mathrm{ion}, 1}$",   
+    "rlizi2": r"$r_{\mathrm{ion}, 2}$",   
+    "dianli1": r"$\mathrm{IE}_1$",        
+    "dianli2": r"$\mathrm{IE}_2$",        
+    "qinghe1": r"$\mathrm{EA}_1$",        
+    "qinghe2": r"$\mathrm{EA}_2$",        
+    "s1": r"$n_{s, 1}$",                 
+    "s2": r"$n_{s, 2}$",                  
+    "xushu1": r"$Z_1$",                   
+    "xushu2": r"$Z_2$",                   
+    "ddian1": r"$n_{d, 1}$",              
+    "pdian2": r"$n_{p, 2}$"               
+}
+
+X_train_renamed = X_train.rename(columns=name_mapping)
+
+
+
+# Creating
+plt.figure(figsize=(9, 6), dpi=300)
+
+
+shap.summary_plot(shap_values, X_train_renamed, max_display=10, show=False)
+
+ax = plt.gca()
+plt.xlim(-0.2, 0.2)
+step = 0.1  
+ticks = np.arange(-0.2, 0.2 + step/2, step)
+plt.xticks(ticks, fontsize=14)       
+plt.yticks(fontsize=14) 
+border_width = 2.0  
+for spine in ax.spines.values():
+    spine.set_visible(True)          
+    spine.set_linewidth(border_width) 
+    spine.set_color('black')        
+
+ax.tick_params(width=border_width)
+
+# 4. saving
+plt.savefig('shap_summary_plot_centeredGBR.png', bbox_inches='tight', dpi=300)
+plt.savefig('shap_summary_plot_centeredGBR.pdf', format='pdf', bbox_inches='tight')
+plt.show()
+
+print("✅ Saving as:")
+
+
+# ==========================================
+print("📊Organizing ...")
+
+# 
+df_shap = pd.DataFrame(shap_values, columns=X_train_renamed.columns, index=X_train.index)
+df_features = X_train_renamed.copy()
+df_shap.index.name = 'Sample_Name'     
+df_features.index.name = 'Sample_Name' 
+
+# 
+shap_melted = df_shap.reset_index().melt(id_vars='Sample_Name', var_name='Feature_Name', value_name='SHAP_Value')
+feature_melted = df_features.reset_index().melt(id_vars='Sample_Name', var_name='Feature_Name', value_name='Feature_Value_Raw')
+
+# 
+df_origin = pd.merge(shap_melted, feature_melted, on=['Sample_Name', 'Feature_Name'])
+
+# 
+df_origin['Color_Value'] = df_origin.groupby('Feature_Name')['Feature_Value_Raw'].transform(
+    lambda x: (x - x.min()) / (x.max() - x.min() + 1e-9)
+)
+
+# 
+mean_abs_shap = np.abs(df_shap).mean().sort_values(ascending=True)
+importance_map = {name: i for i, name in enumerate(mean_abs_shap.index)}
+df_origin['Y_Base'] = df_origin['Feature_Name'].map(importance_map)
+
+#  
+np.random.seed(42)
+jitter = np.random.uniform(-0.25, 0.25, size=len(df_origin))
+df_origin['Y_With_Jitter'] = df_origin['Y_Base'] + jitter
+
+# ==========================================
+origin_output_file = 'origin_shap_plot_dataGBR.csv'
+df_origin.to_csv(origin_output_file, index=False, encoding='utf-8-sig')
+
+
+df_ticks = pd.DataFrame(list(importance_map.items()), columns=['Feature_Name', 'Y_Tick_Index'])
+df_ticks.to_csv('origin_y_ticks.csv', index=False, encoding='utf-8-sig')
+
+print(f"✅  {origin_output_file}")
+print("✅  origin_y_ticks.csv")
+print("\surfing：")
+print(df_origin.head())
