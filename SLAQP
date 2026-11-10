@@ -1,0 +1,75 @@
+#SLAQP
+import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
+
+file_path = '1.4pre.csv'
+df = pd.read_csv(file_path)
+
+features = df[['x1', 'x2']].values
+target = df['Y'].values
+
+target_mean = np.mean(target)
+tss = np.sum((target - target_mean) ** 2)
+
+
+def loss_function(params, X, y):
+    a, b, c = params
+    y_pred = a * X[:, 0] + b * X[:, 1] + c
+    return np.sum((y - y_pred) ** 2)
+
+
+iteration_history = []
+
+def callback_func(params):
+    """
+    Everytimes：Record、RSS 和 R^2
+    """
+
+    current_rss = loss_function(params, features, target)
+
+    current_r2 = 1 - (current_rss / tss)
+    
+    iteration_history.append({
+        'params': params.copy(), 
+        'loss': current_rss,
+        'r2': current_r2
+    })
+
+constraints = []
+
+initial_guess = [1.0, 1.0, 1.0]
+
+print("Monitoring...")
+result = minimize(
+    loss_function,
+    initial_guess,
+    args=(features, target),
+    method='SLSQP',
+    constraints=constraints,
+    tol=1e-6,
+    callback=callback_func
+)
+
+
+if result.success:
+    print("\n" + "="*75)
+    print("Diary (Optimization Log with R^2)")
+    print("="*75)
+
+    print(f"{'Iter':<5} | {'a':<10} | {'b':<10} | {'c':<10} | {'Loss (RSS)':<15} | {'R^2':<10}")
+    print("-" * 75)
+    
+    for i, entry in enumerate(iteration_history):
+        p = entry['params']
+
+        print(f"{i+1:<5} | {p[0]:.4f}     | {p[1]:.4f}     | {p[2]:.4f}     | {entry['loss']:.4f}          | {entry['r2']:.4f}")
+    print("-" * 75)
+
+
+    best_params = result.x
+    print(f"\nFinnal: Target = {best_params[0]:.4f}*x1 + {best_params[1]:.4f}*x2 + {best_params[2]:.4f}")
+    print(f"Finnal R^2: {iteration_history[-1]['r2']:.4f}")
+
+else:
+    print("Fail:", result.message)
